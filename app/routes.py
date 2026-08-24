@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
+
 from pymongo.errors import DuplicateKeyError
 
 from app.database import urls_collection, redis_client
@@ -13,6 +14,30 @@ router = APIRouter()
 @router.post("/urls", response_model=URLResponse)
 async def create_url(data: URLCreate):
 
+    # Custom code provided by user
+    if data.custom_code:
+        short_code = data.custom_code
+
+        document = {
+            "short_code": short_code,
+            "original_url": str(data.original_url)
+        }
+
+        try:
+            await urls_collection.insert_one(document)
+
+        except DuplicateKeyError:
+            raise HTTPException(
+                status_code=409,
+                detail="Custom code already exists"
+            )
+
+        return {
+            "short_code": short_code,
+            "short_url": f"http://localhost:8000/{short_code}"
+        }
+
+    # No custom code → generate random code
     for _ in range(5):
 
         short_code = generate_short_code()
@@ -54,7 +79,7 @@ async def redirect_url(short_code: str):
 
     except Exception:
         # Redis is only a cache.
-        # If it fails, continue to MongoDB.
+        # If Redis fails, continue to MongoDB.
         pass
 
     # Redis miss or Redis unavailable → MongoDB
