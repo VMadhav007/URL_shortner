@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
-from pymongo.errors import DuplicateKeyError, PyMongoError
-import redis.exceptions
-from datetime import datetime, timedelta, timezone
+from pymongo.errors import DuplicateKeyError
+import socket
 
 from app.database import urls_collection, redis_client
 from app.schemas import URLCreate, URLResponse
@@ -15,24 +14,14 @@ router = APIRouter()
 @router.get("/metrics/health")
 async def health_check():
 
-    try:
-        await urls_collection.database.command("ping")
-        mongodb_status = "connected"
-    except PyMongoError:
-        mongodb_status = "disconnected"
-
-    try:
-        await redis_client.ping()
-        redis_status = "connected"
-    except redis.exceptions.RedisError:
-        redis_status = "disconnected"
-
-    status = "ok" if mongodb_status == "connected" and redis_status == "connected" else "degraded"
+    await urls_collection.database.command("ping")
+    await redis_client.ping()
 
     return {
-        "status": status,
-        "mongodb": mongodb_status,
-        "redis": redis_status
+        "status": "ok",
+        "mongodb": "connected",
+        "redis": "connected",
+        "instance": socket.gethostname()
     }
 
 @router.post("/urls", response_model=URLResponse)
@@ -42,14 +31,10 @@ async def create_url(data: URLCreate):
     if data.custom_code:
         short_code = data.custom_code
 
-        now = datetime.now(timezone.utc)
         document = {
             "short_code": short_code,
-            "original_url": str(data.original_url),
-            "created_at": now
+            "original_url": str(data.original_url)
         }
-        if data.expires_in:
-            document["expires_at"] = now + timedelta(seconds=data.expires_in)
 
         try:
             await urls_collection.insert_one(document)
@@ -58,11 +43,6 @@ async def create_url(data: URLCreate):
             raise HTTPException(
                 status_code=409,
                 detail="Custom code already exists"
-            )
-        except PyMongoError:
-            raise HTTPException(
-                status_code=503,
-                detail="Database error"
             )
 
         return {
@@ -75,14 +55,10 @@ async def create_url(data: URLCreate):
 
         short_code = generate_short_code()
 
-        now = datetime.now(timezone.utc)
         document = {
             "short_code": short_code,
-            "original_url": str(data.original_url),
-            "created_at": now
+            "original_url": str(data.original_url)
         }
-        if data.expires_in:
-            document["expires_at"] = now + timedelta(seconds=data.expires_in)
 
         try:
             await urls_collection.insert_one(document)
@@ -94,11 +70,6 @@ async def create_url(data: URLCreate):
 
         except DuplicateKeyError:
             continue
-        except PyMongoError:
-            raise HTTPException(
-                status_code=503,
-                detail="Database error"
-            )
 
     raise HTTPException(
         status_code=500,
@@ -119,21 +90,15 @@ async def redirect_url(short_code: str):
                 status_code=307
             )
 
-    except redis.exceptions.RedisError:
+    except Exception:
         # Redis is only a cache.
         # If Redis fails, continue to MongoDB.
         pass
 
     # Redis miss or Redis unavailable → MongoDB
-    try:
-        document = await urls_collection.find_one(
-            {"short_code": short_code}
-        )
-    except PyMongoError:
-        raise HTTPException(
-            status_code=503,
-            detail="Database error"
-        )
+    document = await urls_collection.find_one(
+        {"short_code": short_code}
+    )
 
     if not document:
         raise HTTPException(
@@ -141,33 +106,16 @@ async def redirect_url(short_code: str):
             detail="Short URL not found"
         )
 
-    now = datetime.now(timezone.utc)
-    if "expires_at" in document and document["expires_at"]:
-        expires_at = document["expires_at"]
-        # Ensure timezone-aware comparison
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        
-        if expires_at < now:
-            raise HTTPException(
-                status_code=404,
-                detail="Short URL not found"
-            )
-        cache_ttl = int((expires_at - now).total_seconds())
-    else:
-        cache_ttl = 3600
-
     original_url = document["original_url"]
 
     # Try to cache the result
     try:
-        if cache_ttl > 0:
-            await redis_client.set(
-                short_code,
-                original_url,
-                ex=cache_ttl
-            )
-    except redis.exceptions.RedisError:
+        await redis_client.set(
+            short_code,
+            original_url,
+            ex=3600
+        )
+    except Exception:
         # Redis failure should not affect the redirect
         pass
 
