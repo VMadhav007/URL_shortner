@@ -15,4 +15,26 @@ P95              → how slow the worst 5% of requests are
 Failures         → reliability
 
 9:1 ratio read:write
+
+
+
+4 instances - 323 RPS
 ![alt text](image.png)
+4 instance docker stats
+![alt text](image-3.png)
+
+1 instances - 322 RPS
+![alt text](image-2.png)
+1 instance docker stats
+![alt text](image-1.png)
+
+
+
+We didn't find an obvious bottleneck because:
+
+API CPU      ~11–12%
+Nginx CPU    ~6%
+Redis CPU    ~2.6%
+Mongo CPU    ~1.7%
+
+So your current machine wasn't anywhere near CPU saturation.
