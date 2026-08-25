@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from pymongo.errors import DuplicateKeyError
+
 import socket
+import os
 
 from app.database import urls_collection, redis_client
 from app.schemas import URLCreate, URLResponse
@@ -11,9 +13,16 @@ from app.utils import generate_short_code
 router = APIRouter()
 
 
+# Base URL used when generating short URLs.
+# Kubernetes provides this through an environment variable.
+BASE_URL = os.getenv(
+    "BASE_URL",
+    "http://127.0.0.1:8000"
+)
+
+
 @router.get("/metrics/health")
 async def health_check():
-
     await urls_collection.database.command("ping")
     await redis_client.ping()
 
@@ -24,11 +33,13 @@ async def health_check():
         "instance": socket.gethostname()
     }
 
+
 @router.post("/urls", response_model=URLResponse)
 async def create_url(data: URLCreate):
 
     # Custom code provided by user
     if data.custom_code:
+
         short_code = data.custom_code
 
         document = {
@@ -47,8 +58,9 @@ async def create_url(data: URLCreate):
 
         return {
             "short_code": short_code,
-            "short_url": f"http://localhost:8000/{short_code}"
+            "short_url": f"{BASE_URL}/{short_code}"
         }
+
 
     # No custom code → generate random code
     for _ in range(5):
@@ -65,11 +77,13 @@ async def create_url(data: URLCreate):
 
             return {
                 "short_code": short_code,
-                "short_url": f"http://localhost:8000/{short_code}"
+                "short_url": f"{BASE_URL}/{short_code}"
             }
 
         except DuplicateKeyError:
+            # Collision → generate another code
             continue
+
 
     raise HTTPException(
         status_code=500,
@@ -80,11 +94,13 @@ async def create_url(data: URLCreate):
 @router.get("/{short_code}")
 async def redirect_url(short_code: str):
 
-    # Try Redis first
+    # 1. Try Redis first
     try:
+
         original_url = await redis_client.get(short_code)
 
         if original_url:
+
             return RedirectResponse(
                 url=original_url,
                 status_code=307
@@ -95,12 +111,14 @@ async def redirect_url(short_code: str):
         # If Redis fails, continue to MongoDB.
         pass
 
-    # Redis miss or Redis unavailable → MongoDB
+
+    # 2. Redis miss/unavailable → MongoDB
     document = await urls_collection.find_one(
         {"short_code": short_code}
     )
 
     if not document:
+
         raise HTTPException(
             status_code=404,
             detail="Short URL not found"
@@ -108,17 +126,22 @@ async def redirect_url(short_code: str):
 
     original_url = document["original_url"]
 
-    # Try to cache the result
+
+    # 3. Populate Redis cache
     try:
+
         await redis_client.set(
             short_code,
             original_url,
             ex=3600
         )
+
     except Exception:
-        # Redis failure should not affect the redirect
+        # Redis failure should NOT break redirect.
         pass
 
+
+    # 4. Redirect user
     return RedirectResponse(
         url=original_url,
         status_code=307

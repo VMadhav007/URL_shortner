@@ -1,3 +1,5 @@
+const API_BASE_URL = "http://192.168.49.2:31240";
+
 const form = document.getElementById("url-form");
 
 const originalUrlInput = document.getElementById("original-url");
@@ -14,7 +16,6 @@ const copyButton = document.getElementById("copy-button");
 
 
 form.addEventListener("submit", async (event) => {
-
     event.preventDefault();
 
     // Hide old messages
@@ -34,21 +35,19 @@ form.addEventListener("submit", async (event) => {
         requestBody.custom_code = customCode;
     }
 
+    // Only send expiration if user entered one
     if (expiration) {
         requestBody.expires_in = parseInt(expiration, 10);
     }
 
     try {
-
         const response = await fetch(
-            "http://127.0.0.1:8000/urls",
+            `${API_BASE_URL}/urls`,
             {
                 method: "POST",
-
                 headers: {
                     "Content-Type": "application/json"
                 },
-
                 body: JSON.stringify(requestBody)
             }
         );
@@ -61,17 +60,17 @@ form.addEventListener("submit", async (event) => {
             );
         }
 
-        // Display the generated short URL and other details
+        // Display generated short URL
         shortUrl.textContent = data.short_url;
         shortUrl.href = data.short_url;
-        
+
         resultOriginalUrl.textContent = originalUrl;
+
         openButton.href = data.short_url;
 
         result.classList.remove("hidden");
 
     } catch (err) {
-
         error.textContent = err.message;
         error.classList.remove("hidden");
     }
@@ -79,14 +78,19 @@ form.addEventListener("submit", async (event) => {
 
 
 copyButton.addEventListener("click", async () => {
+    try {
+        await navigator.clipboard.writeText(
+            shortUrl.textContent
+        );
 
-    await navigator.clipboard.writeText(
-        shortUrl.textContent
-    );
+        copyButton.textContent = "Copied!";
 
-    copyButton.textContent = "Copied!";
+        setTimeout(() => {
+            copyButton.textContent = "Copy";
+        }, 1500);
 
-    setTimeout(() => {
-        copyButton.textContent = "Copy";
-    }, 1500);
+    } catch (err) {
+        error.textContent = "Failed to copy URL";
+        error.classList.remove("hidden");
+    }
 });

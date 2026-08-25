@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: url-shortener-api
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: url-shortener-api
+
+  template:
+    metadata:
+      labels:
+        app: url-shortener-api
+
+    spec:
+      containers:
+        - name: api
+          image: url_shortner-api:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8000
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          env:
+            - name: MONGO_URL
+              value: "mongodb://mongodb:27017"
+
+            - name: MONGO_DB
+              value: "url_db"
+
+            - name: REDIS_URL
+              value: "redis://redis:6379"
+
+            - name: BASE_URL
+              value: "http://192.168.49.2:31240"
+
+          readinessProbe:
+            httpGet:
+              path: /metrics/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /metrics/health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10

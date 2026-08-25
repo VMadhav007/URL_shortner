@@ -1,56 +1,49 @@
-MONGODB
-
-1. Open MongoDB:
-   docker exec -it url_mongodb mongosh
-
-2. Select your database:
-   use url_db
-
-3. View all URLs:
-   db.urls.find().pretty()
-
-4. Find one URL:
-   db.urls.findOne({ short_code: "google" })
-
-5. Count URLs:
-   db.urls.countDocuments()
-
-6. Check indexes:
-   db.urls.getIndexes()
-
-7. Exit MongoDB:
-   exit
-
-REDIS
-
-1. Open Redis:
-   docker exec -it url_redis redis-cli
-
-2. View all cached keys:
-   KEYS *
-
-3. Get a cached URL:
-   GET google
-
-4. Check cache expiry:
-   TTL google
-
-5. Check the type:
-   TYPE google
-
-6. Exit Redis:
-   exit
-
-QUICK VERSION
-
 MongoDB:
-docker exec -it url_mongodb mongosh
+
+docker exec -it url_shortner-mongodb-1 mongosh
+
 use url_db
 db.urls.find().pretty()
 exit
 
+
 Redis:
-docker exec -it url_redis redis-cli
+
+docker exec -it url_shortner-redis-1 redis-cli
+
 KEYS *
 GET google
 exit
+
+
+
+# --------------------------------------------------
+# 🧠 SIMPLE DAILY WORKFLOW
+# --------------------------------------------------
+
+# Start:
+minikube start --driver=docker
+kubectl get nodes
+kubectl get pods
+
+# Work/test...
+
+# Stop:
+# Stop Locust
+minikube stop
+
+
+# --------------------------------------------------
+# IMPORTANT
+# --------------------------------------------------
+
+# minikube stop
+# → Stops Kubernetes and releases resources.
+# → Keeps your cluster/configuration.
+
+# minikube start
+# → Starts it again.
+
+# minikube delete
+# → Completely deletes the cluster.
+# → Don't use unless we intentionally want to reset Kubernetes.
