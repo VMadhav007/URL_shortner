@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>URL Shortener</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h1>URL Shortener</h1>
+
+            <p class="subtitle">
+                Turn long URLs into short links.
+            </p>
+
+            <form id="url-form">
+
+                <label for="original-url">
+                    Long URL
+                </label>
+
+                <input
+                    type="url"
+                    id="original-url"
+                    placeholder="https://example.com/very/long/url"
+                    required
+                >
+
+                <label for="custom-code">
+                    Custom code <span>(optional)</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="custom-code"
+                    placeholder="my-link"
+                >
+
+                <label for="expiration">
+                    Expiration
+                </label>
+
+                <select id="expiration">
+                    <option value="">No expiration</option>
+                    <option value="3600">1 hour</option>
+                    <option value="86400">1 day</option>
+                    <option value="604800">7 days</option>
+                    <option value="2592000">30 days</option>
+                </select>
+
+                <button type="submit">
+                    Shorten URL
+                </button>
+
+            </form>
+
+            <div id="error" class="error hidden"></div>
+
+            <div id="result" class="result hidden">
+
+                <div class="result-details">
+                    <p><strong>Original URL:</strong><br><span id="result-original-url" style="word-break: break-all; color: #555;"></span></p>
+                    <p><strong>Short URL:</strong><br><a id="short-url" href="#" target="_blank"></a></p>
+                </div>
+
+                <div class="result-actions">
+                    <button id="copy-button" type="button">
+                        Copy
+                    </button>
+                    <a id="open-button" href="#" target="_blank" class="button-link">
+                        Open
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

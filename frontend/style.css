@@ -1,0 +1,176 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f5;
+}
+
+.container {
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 20px;
+}
+
+.card {
+    width: 100%;
+    max-width: 550px;
+
+    background: white;
+
+    padding: 40px;
+
+    border-radius: 12px;
+
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+    text-align: center;
+    margin-top: 0;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+label {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+label span {
+    font-weight: normal;
+    color: #777;
+}
+
+input {
+    padding: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    font-size: 16px;
+}
+
+button {
+    padding: 12px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: #18181b;
+    color: white;
+
+    font-size: 16px;
+
+    cursor: pointer;
+
+    margin-top: 15px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.result {
+    margin-top: 30px;
+}
+
+.result-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.result-box a {
+    flex: 1;
+
+    word-break: break-all;
+
+    color: #2563eb;
+}
+
+.result-box button {
+    margin: 0;
+}
+
+.error {
+    margin-top: 20px;
+
+    padding: 12px;
+
+    border-radius: 6px;
+
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.hidden {
+    display: none;
+}
+
+select {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    background: white;
+}
+
+.result-details {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #eaeaea;
+}
+
+.result-details p {
+    margin: 10px 0;
+}
+
+.result-details a {
+    color: #2563eb;
+    word-break: break-all;
+    font-weight: bold;
+}
+
+.result-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.result-actions button, .result-actions a.button-link {
+    flex: 1;
+    text-align: center;
+    margin-top: 0;
+}
+
+a.button-link {
+    display: inline-block;
+    padding: 12px;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+a.button-link:hover {
+    opacity: 0.9;
+}
